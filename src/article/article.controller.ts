@@ -10,7 +10,6 @@ import {
     Param,
     Delete,
     UsePipes,
-    ValidationPipe,
     Query,
 } from "@nestjs/common";
 import { ArticleService } from "./article.service";
@@ -19,10 +18,20 @@ import { CreateArticleDto } from "./dto/createArcticle.dto";
 import { IArticleResponse } from "./types/articleResponse.interface";
 import { DeleteResult } from "typeorm";
 import { IArticlesResponse } from "./types/articlesResponse.interface";
+import { BackendValidationPipe } from "@app/shared/pipes/backendValidation.pipe";
 
 @Controller("articles")
 export class ArticleController {
     constructor(private readonly articleService: ArticleService) {}
+
+    @Get("feed")
+    @UseGuards(AuthGuard)
+    async getFeed(
+        @User("id") userId: number,
+        @Query() query: any
+    ): Promise<IArticlesResponse> {
+        return this.articleService.getFeed(userId, query);
+    }
 
     @Get()
     async findAll(
@@ -34,7 +43,7 @@ export class ArticleController {
 
     @Post()
     @UseGuards(AuthGuard)
-    @UsePipes(new ValidationPipe())
+    @UsePipes(new BackendValidationPipe())
     async create(
         @User() currUser: UserEntity,
         @Body("article") createArticleDto: CreateArticleDto
@@ -65,7 +74,7 @@ export class ArticleController {
 
     @Put(":slug")
     @UseGuards(AuthGuard)
-    @UsePipes(new ValidationPipe())
+    @UsePipes(new BackendValidationPipe())
     async updateArticle(
         @User("id") userId: number,
         @Param("slug") slug: string,
