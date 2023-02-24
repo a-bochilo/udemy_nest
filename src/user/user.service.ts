@@ -18,15 +18,25 @@ export class UserService {
     ) {}
 
     async createUser(createUserDto: CreateUserDto): Promise<UserEntity> {
+        const errorResponse = {
+            errors: {},
+        };
         const userByEmail = await this.userRepository.findOne({
             where: { email: createUserDto.email },
         });
         const userByUsername = await this.userRepository.findOne({
             where: { username: createUserDto.username },
         });
+
+        if (userByEmail) {
+            errorResponse.errors["email"] = "user already exist";
+        }
+        if (userByUsername) {
+            errorResponse.errors["username"] = "user already exist";
+        }
         if (userByEmail || userByUsername) {
             throw new HttpException(
-                "user already exist",
+                errorResponse,
                 HttpStatus.UNPROCESSABLE_ENTITY
             );
         }
@@ -37,13 +47,19 @@ export class UserService {
     }
 
     async login(loginUserDto: LoginUserDto): Promise<UserEntity> {
+        const errorResponse = {
+            errors: {
+                "email or password": "is invalid",
+            },
+        };
+
         const user = await this.userRepository.findOne({
             where: { email: loginUserDto.email },
             select: ["id", "username", "email", "bio", "image", "password"],
         });
         if (!user) {
             throw new HttpException(
-                "user not found",
+                errorResponse,
                 HttpStatus.UNPROCESSABLE_ENTITY
             );
         }
@@ -54,7 +70,7 @@ export class UserService {
         );
         if (!isPasswordCorrect) {
             throw new HttpException(
-                "user not found",
+                errorResponse,
                 HttpStatus.UNPROCESSABLE_ENTITY
             );
         }
